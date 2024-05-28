@@ -1,0 +1,9 @@
+tk
+ttkbootstrap
+moviepy
+numpy
+decorator
+imageio[ffmpeg]
+tqdm
+requests
+proglog
