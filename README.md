@@ -8,7 +8,7 @@ Welcome to **Cut It Out!** – your friendly and simple video cutter app for Tik
 
 ## Features
 
-- **Select Video Files**: Choose from a variety of video formats (`.mp4`, `.avi`, `.mov`, `.wav`).
+- **Select Video Files**: Choose from a variety of video formats (`.mp4`, `.avi`, `.mov`).
 - **Add Background Music**: Spice up your videos with background audio.
 - **Trim Videos**: Define start and end times for precise trimming.
 - **Resize Videos**: Adjust the width and height to your preference.
