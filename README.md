@@ -16,6 +16,11 @@ Welcome to **Cut It Out!** – your friendly and simple video cutter app for Tik
 
 ![Example](https://raw.githubusercontent.com/bugsplat404/PyCutItOut/main/app.png)
 
+
+## !Disclaimer!
+
+This is a small, random, brainstorming, one-evening-project so don't take it to serious :)
+
 ## Getting Started
 
 ### Prerequisites
@@ -48,7 +53,7 @@ python main.py
 ```
 
 
-### Running it as .exe
+## Running it as .exe
 
 For convenience reasons, using it as .exe without dependencies comes in handy. Herefore I recommend PyInstaller.
 
