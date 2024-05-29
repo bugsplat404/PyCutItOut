@@ -14,6 +14,7 @@ Welcome to **Cut It Out!** – your friendly and simple video cutter app for Tik
 - **Resize Videos**: Adjust the width and height to your preference.
 - **Adjust Volume**: Fine-tune the audio levels for both video and background music.
 - **Add Watermark**: Brand your content with your specific Watermark.
+- **Adjust Brightness, Bitrate, Framerate**: and More!
 
 ![Example](https://raw.githubusercontent.com/bugsplat404/PyCutItOut/main/app.png)
 

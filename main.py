@@ -3,7 +3,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import filedialog, messagebox
 from moviepy.editor import VideoFileClip, CompositeAudioClip, ImageClip, CompositeVideoClip
-from moviepy.video.fx.all import crop, resize
+from moviepy.video.fx.all import crop, resize, speedx, blackwhite, rotate, lum_contrast
 from moviepy.audio.fx.all import volumex
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 import threading
@@ -56,40 +56,108 @@ class VideoCutterApp:
         self.end_time_entry.grid(row=3, column=1, padx=10, pady=10)
 
         ttk.Label(tab, text="Width:").grid(row=4, column=0, padx=10, pady=10)
-        self.width_var = tk.IntVar(value=1920)
+        self.width_var = tk.IntVar(value=1080)
         self.width_entry = ttk.Entry(tab, textvariable=self.width_var)
         self.width_entry.grid(row=4, column=1, padx=10, pady=10)
 
         ttk.Label(tab, text="Height:").grid(row=5, column=0, padx=10, pady=10)
-        self.height_var = tk.IntVar(value=1080)
+        self.height_var = tk.IntVar(value=1920)
         self.height_entry = ttk.Entry(tab, textvariable=self.height_var)
         self.height_entry.grid(row=5, column=1, padx=10, pady=10)
 
+        # Add predefined resolutions combobox
+        ttk.Label(tab, text="Select Resolution:").grid(row=6, column=0, padx=10, pady=10)
+        self.resolutions = ["1080 x 1920", "720 x 1280", "480 x 640", "1920 x 1080", "1280 x 720", "640 x 480"]
+        self.resolution_var = tk.StringVar()
+        self.resolution_combobox = ttk.Combobox(tab, textvariable=self.resolution_var, values=self.resolutions)
+        self.resolution_combobox.grid(row=6, column=1, padx=10, pady=10)
+        self.resolution_combobox.bind("<<ComboboxSelected>>", self.update_resolution)
+
         self.video_volume_label = ttk.Label(tab, text="Video Volume: 1.0")
-        self.video_volume_label.grid(row=6, column=0, padx=10, pady=10)
+        self.video_volume_label.grid(row=7, column=0, padx=10, pady=10)
         self.video_volume_var = tk.DoubleVar(value=1.0)
-        self.video_volume_slider = ttk.Scale(tab, from_=0, to=2, orient=tk.HORIZONTAL, variable=self.video_volume_var, command=self.update_video_volume_label)
-        self.video_volume_slider.grid(row=6, column=1, padx=10, pady=10)
+        self.video_volume_slider = ttk.Scale(tab, from_=0, to=3, orient=tk.HORIZONTAL, variable=self.video_volume_var, command=self.update_video_volume_label)
+        self.video_volume_slider.grid(row=7, column=1, padx=10, pady=10)
 
         self.audio_volume_label = ttk.Label(tab, text="Audio Volume: 1.0")
-        self.audio_volume_label.grid(row=7, column=0, padx=10, pady=10)
+        self.audio_volume_label.grid(row=8, column=0, padx=10, pady=10)
         self.audio_volume_var = tk.DoubleVar(value=1.0)
-        self.audio_volume_slider = ttk.Scale(tab, from_=0, to=2, orient=tk.HORIZONTAL, variable=self.audio_volume_var, command=self.update_audio_volume_label)
-        self.audio_volume_slider.grid(row=7, column=1, padx=10, pady=10)
+        self.audio_volume_slider = ttk.Scale(tab, from_=0, to=3, orient=tk.HORIZONTAL, variable=self.audio_volume_var, command=self.update_audio_volume_label)
+        self.audio_volume_slider.grid(row=8, column=1, padx=10, pady=10)
+        
+        self.video_speed_label = ttk.Label(tab, text="Video Speed: 1.0")
+        self.video_speed_label.grid(row=9, column=0, padx=10, pady=10)
+        self.video_speed_var = tk.DoubleVar(value=1.0)
+        self.video_speed_slider = ttk.Scale(tab, from_=0, to=3, orient=tk.HORIZONTAL, variable=self.video_speed_var, command=self.update_video_speed_label)
+        self.video_speed_slider.grid(row=9, column=1, padx=10, pady=10)
+        
+        self.video_rotation_label = ttk.Label(tab, text="Video Rotation: 0")
+        self.video_rotation_label.grid(row=10, column=0, padx=10, pady=10)
+        self.video_rotation_var = tk.IntVar(value=0)
+        self.video_rotation_slider = ttk.Scale(tab, from_=0, to=360, orient=tk.HORIZONTAL, variable=self.video_rotation_var, command=self.update_video_rotation_label)
+        self.video_rotation_slider.grid(row=10, column=1, padx=10, pady=10)
+        
+        self.contrast_label = ttk.Label(tab, text="Contrast: 0.0")
+        self.contrast_label.grid(row=11, column=0, padx=10, pady=10)
+        self.contrast_var = tk.DoubleVar(value=0.0)
+        self.contrast_slider = ttk.Scale(tab, from_=-2, to=2, orient=tk.HORIZONTAL, variable=self.contrast_var, command=self.update_contrast_label)
+        self.contrast_slider.grid(row=11, column=1, padx=10, pady=10)
+
+        self.brightness_label = ttk.Label(tab, text="Brightness: 0.0")
+        self.brightness_label.grid(row=12, column=0, padx=10, pady=10)
+        self.brightness_var = tk.DoubleVar(value=0.0)
+        self.brightness_slider = ttk.Scale(tab, from_=-100, to=100, orient=tk.HORIZONTAL, variable=self.brightness_var, command=self.update_brightness_label)
+        self.brightness_slider.grid(row=12, column=1, padx=10, pady=10)
+
+        self.framerate_label = ttk.Label(tab, text="Framerate: 60")
+        self.framerate_label.grid(row=13, column=0, padx=10, pady=10)
+        self.framerate_var = tk.IntVar(value=60)
+        self.framerate_entry = ttk.Entry(tab, textvariable=self.framerate_var)
+        self.framerate_entry.grid(row=13, column=1, padx=10, pady=10)
+
+        self.bitrate_label = ttk.Label(tab, text="Bitrate: 12000k")
+        self.bitrate_label.grid(row=14, column=0, padx=10, pady=10)
+        self.bitrate_var = tk.StringVar(value="12000k")
+        self.bitrate_entry = ttk.Entry(tab, textvariable=self.bitrate_var)
+        self.bitrate_entry.grid(row=14, column=1, padx=10, pady=10)
 
         self.add_watermark_var = tk.BooleanVar()
         self.add_watermark_checkbox = ttk.Checkbutton(tab, text="Add Watermark", variable=self.add_watermark_var)
-        self.add_watermark_checkbox.grid(row=8, column=0, padx=10, pady=10)
+        self.add_watermark_checkbox.grid(row=15, column=0, padx=10, pady=10)
 
         self.watermark_text_var = tk.StringVar()
         self.watermark_text_entry = ttk.Entry(tab, textvariable=self.watermark_text_var)
-        self.watermark_text_entry.grid(row=8, column=1, padx=10, pady=10)
+        self.watermark_text_entry.grid(row=15, column=1, padx=10, pady=10)
 
-        ttk.Button(tab, text="Cut It Out!", command=self.cut_video, bootstyle="success").grid(row=9, column=0, columnspan=3, pady=20)
+        ttk.Button(tab, text="Cut It Out!", command=self.cut_video, bootstyle="success").grid(row=16, column=0, columnspan=3, pady=20)
 
         self.progress_var = tk.IntVar()
         self.progress_bar = ttk.Progressbar(tab, orient=tk.HORIZONTAL, length=400, mode='indeterminate', variable=self.progress_var)
-        self.progress_bar.grid(row=10, column=0, columnspan=3, padx=10, pady=10)
+        self.progress_bar.grid(row=17, column=0, columnspan=3, padx=10, pady=10)
+
+    def update_resolution(self, event):
+        resolution = self.resolution_var.get()
+        width, height = map(int, resolution.split(' x '))
+        self.width_var.set(width)
+        self.height_var.set(height)
+
+    def update_video_volume_label(self, value):
+        self.video_volume_label.config(text=f"Video Volume: {float(value):.1f}")
+        
+    def update_audio_volume_label(self, value):
+        self.audio_volume_label.config(text=f"Audio Volume: {float(value):.1f}")
+        
+    def update_video_speed_label(self, value):
+        self.video_speed_label.config(text=f"Video Speed: {float(value):.1f}")
+        
+    def update_video_rotation_label(self, value):
+        self.video_rotation_label.config(text=f"Video Rotation: {int(float(value))}")
+
+    def update_contrast_label(self, value):
+        self.contrast_label.config(text=f"Contrast: {float(value):.1f}")
+
+    def update_brightness_label(self, value):
+        self.brightness_label.config(text=f"Brightness: {float(value):.1f}")
 
     def setup_audio_extractor_ui(self, tab):
         ttk.Label(tab, text="Input Video File:").grid(row=0, column=0, padx=10, pady=10)
@@ -140,8 +208,14 @@ class VideoCutterApp:
             height = int(self.height_entry.get())
             video_volume = float(self.video_volume_var.get())
             audio_volume = float(self.audio_volume_var.get())
+            video_speed = float(self.video_speed_var.get())
+            video_rotation = int(self.video_rotation_var.get())
+            contrast = float(self.contrast_var.get())
+            brightness = float(self.brightness_var.get())
+            framerate = int(self.framerate_var.get())
+            bitrate = self.bitrate_var.get()
         except ValueError:
-            messagebox.showerror("Error", "Start time, end time, width, height, and volume must be integers or floats.")
+            messagebox.showerror("Error", "Invalid input values.")
             return
 
         if start_time >= end_time:
@@ -152,15 +226,27 @@ class VideoCutterApp:
         if not output_dir:
             return
 
-        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, output_dir)).start()
+        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, bitrate, output_dir)).start()
 
-    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, output_dir):
+    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, bitrate, output_dir):
         self.progress_bar.start()
 
         try:
             with VideoFileClip(self.input_file) as video:
                 subclip = video.subclip(start_time, end_time)
 
+                # Apply video speed
+                if video_speed != 1.0:
+                    subclip = speedx(subclip, factor=video_speed)
+
+                # Apply video rotation
+                if video_rotation != 0:
+                    subclip = rotate(subclip, angle=video_rotation)
+                
+                # Apply contrast and brightness
+                if contrast != 0.0 or brightness != 0.0:
+                    subclip = lum_contrast(subclip, lum=brightness, contrast=contrast)
+            
                 original_aspect_ratio = video.size[0] / video.size[1]
                 new_aspect_ratio = width / height
 
@@ -188,7 +274,7 @@ class VideoCutterApp:
                     subclip = self.add_text_watermark(subclip, self.watermark_text_var.get())
 
                 output_file = os.path.join(output_dir, f"cut_video_{start_time}_{end_time}.mp4")
-                subclip.write_videofile(output_file, codec="libx264")
+                subclip.write_videofile(output_file, codec="libx264", fps=framerate, bitrate=bitrate)
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video cut and audio added successfully!")
@@ -205,7 +291,6 @@ class VideoCutterApp:
             alpha = 0.4  # Transparency factor
 
             # Position for the watermark (bottom left)
-            # position = (10, frame.shape[0] - 30)
             position = (20, 40)
             
             # Adding text with transparency
@@ -234,13 +319,6 @@ class VideoCutterApp:
             messagebox.showinfo("Success", f"Audio extracted successfully to {audio_output_path}!")
         except Exception as e:
             messagebox.showerror("Error", str(e))
-
-    def update_video_volume_label(self, value):
-        self.video_volume_label.config(text=f"Video Volume: {float(value):.1f}")
-
-    def update_audio_volume_label(self, value):
-        self.audio_volume_label.config(text=f"Audio Volume: {float(value):.1f}")
-
 
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
