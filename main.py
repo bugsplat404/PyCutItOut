@@ -2,24 +2,25 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import filedialog, messagebox
-from moviepy.editor import VideoFileClip, CompositeAudioClip
+from moviepy.editor import VideoFileClip, CompositeAudioClip, ImageClip, CompositeVideoClip
 from moviepy.video.fx.all import crop, resize
 from moviepy.audio.fx.all import volumex
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 import threading
-import time
 import os
-
+import cv2
+import numpy as np
 
 class VideoCutterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Py - Cut It Out")
         self.setup_ui()
-        
+
         self.input_file = None
         self.audio_file = None
-        
+        self.watermark_text = None
+
     def setup_ui(self):
         notebook = ttk.Notebook(self.root, bootstyle="primary")
         notebook.pack(fill='both', expand=True)
@@ -76,12 +77,20 @@ class VideoCutterApp:
         self.audio_volume_slider = ttk.Scale(tab, from_=0, to=2, orient=tk.HORIZONTAL, variable=self.audio_volume_var, command=self.update_audio_volume_label)
         self.audio_volume_slider.grid(row=7, column=1, padx=10, pady=10)
 
-        ttk.Button(tab, text="Cut It Out!", command=self.cut_video, bootstyle="success").grid(row=8, column=0, columnspan=3, pady=20)
+        self.add_watermark_var = tk.BooleanVar()
+        self.add_watermark_checkbox = ttk.Checkbutton(tab, text="Add Watermark", variable=self.add_watermark_var)
+        self.add_watermark_checkbox.grid(row=8, column=0, padx=10, pady=10)
+
+        self.watermark_text_var = tk.StringVar()
+        self.watermark_text_entry = ttk.Entry(tab, textvariable=self.watermark_text_var)
+        self.watermark_text_entry.grid(row=8, column=1, padx=10, pady=10)
+
+        ttk.Button(tab, text="Cut It Out!", command=self.cut_video, bootstyle="success").grid(row=9, column=0, columnspan=3, pady=20)
 
         self.progress_var = tk.IntVar()
         self.progress_bar = ttk.Progressbar(tab, orient=tk.HORIZONTAL, length=400, mode='indeterminate', variable=self.progress_var)
-        self.progress_bar.grid(row=9, column=0, columnspan=3, padx=10, pady=10)
-    
+        self.progress_bar.grid(row=10, column=0, columnspan=3, padx=10, pady=10)
+
     def setup_audio_extractor_ui(self, tab):
         ttk.Label(tab, text="Input Video File:").grid(row=0, column=0, padx=10, pady=10)
         self.audio_input_file_entry = ttk.Entry(tab, width=50)
@@ -94,7 +103,7 @@ class VideoCutterApp:
         self.audio_format_entry.grid(row=1, column=1, padx=10, pady=10)
 
         ttk.Button(tab, text="Extract Audio", command=self.extract_audio, bootstyle="success").grid(row=2, column=0, columnspan=3, pady=20)
-        
+
     def select_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4;*.avi;*.mov")])
         if file_path:
@@ -167,13 +176,16 @@ class VideoCutterApp:
                     subclip = crop(subclip, width=new_width, height=new_height, y_center=y_center)
 
                 subclip = resize(subclip, newsize=(width, height))
-                subclip = subclip.fx(volumex, video_volume)
+                subclip = subclip.volumex(video_volume)
 
                 if self.audio_file:
                     with AudioFileClip(self.audio_file) as new_audio:
                         new_audio = new_audio.volumex(audio_volume)
                         composite_audio = CompositeAudioClip([subclip.audio, new_audio])
                         subclip = subclip.set_audio(composite_audio)
+
+                if self.add_watermark_var.get():
+                    subclip = self.add_text_watermark(subclip, self.watermark_text_var.get())
 
                 output_file = os.path.join(output_dir, f"cut_video_{start_time}_{end_time}.mp4")
                 subclip.write_videofile(output_file, codec="libx264")
@@ -185,6 +197,24 @@ class VideoCutterApp:
             messagebox.showerror("Error", str(e))
         finally:
             self.progress_var.set(100)
+
+    def add_text_watermark(self, video_clip, text):
+        def add_text_to_frame(get_frame, t):
+            frame = get_frame(t)
+            overlay = frame.copy()
+            alpha = 0.4  # Transparency factor
+
+            # Position for the watermark (bottom left)
+            # position = (10, frame.shape[0] - 30)
+            position = (20, 40)
+            
+            # Adding text with transparency
+            cv2.putText(overlay, text, position, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
+            return frame
+
+        return video_clip.fl(add_text_to_frame, apply_to=["mask"])
 
     def extract_audio(self):
         if not self.input_file:

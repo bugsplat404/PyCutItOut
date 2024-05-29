@@ -13,6 +13,7 @@ Welcome to **Cut It Out!** – your friendly and simple video cutter app for Tik
 - **Trim Videos**: Define start and end times for precise trimming.
 - **Resize Videos**: Adjust the width and height to your preference.
 - **Adjust Volume**: Fine-tune the audio levels for both video and background music.
+- **Add Watermark**: Brand your content with your specific Watermark.
 
 ![Example](https://raw.githubusercontent.com/bugsplat404/PyCutItOut/main/app.png)
 
@@ -55,7 +56,7 @@ python main.py
 
 ## Running it as .exe
 
-For convenience reasons, using it as .exe without dependencies comes in handy. Herefore I recommend PyInstaller.
+For convenience reasons, using it as .exe without dependencies comes in handy. That's why I didn't split it into multiple files :)
 
 ```bash
 pyinstaller --name CutItOut --onefile --windowed main.py
