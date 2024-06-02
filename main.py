@@ -81,7 +81,7 @@ class VideoCutterApp:
         # Add predefined resolutions combobox
         ttk.Label(basic_settings_frame, text="Select Resolution:").grid(row=6, column=0, padx=10, pady=10, sticky=tk.W)
         self.resolutions = ["<-- Hochformat -->", "1080 x 1920", "720 x 1280", "480 x 640", "<-- Querformat -->", "1920 x 1080", "1280 x 720", "640 x 480"]
-        self.resolution_var = tk.StringVar()
+        self.resolution_var = tk.StringVar(value="1080 x 1920")
         self.resolution_combobox = ttk.Combobox(basic_settings_frame, textvariable=self.resolution_var, values=self.resolutions)
         self.resolution_combobox.grid(row=6, column=1, padx=10, pady=10, sticky=tk.W)
         self.resolution_combobox.bind("<<ComboboxSelected>>", self.update_resolution)
@@ -148,9 +148,9 @@ class VideoCutterApp:
         self.framerate_entry.grid(row=6, column=1, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.extend([self.framerate_label, self.framerate_entry])
 
-        self.bitrate_label = ttk.Label(advanced_settings_frame, text="Bitrate: 12000k")
+        self.bitrate_label = ttk.Label(advanced_settings_frame, text="Bitrate")
         self.bitrate_label.grid(row=7, column=0, padx=10, pady=10, sticky=tk.W)
-        self.bitrate_var = tk.StringVar(value="12000k")
+        self.bitrate_var = tk.StringVar(value="12000")
         self.bitrate_entry = ttk.Entry(advanced_settings_frame, textvariable=self.bitrate_var)
         self.bitrate_entry.grid(row=7, column=1, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.extend([self.bitrate_label, self.bitrate_entry])
@@ -270,6 +270,11 @@ class VideoCutterApp:
             with VideoFileClip(file_path) as video:
                 duration = int(video.duration)
                 fps = int(video.fps)
+                width, height = video.size
+                resolution = f"{width} x {height}"
+                self.width_var.set(width)
+                self.height_var.set(height)
+                self.resolution_var.set(resolution)
                 self.end_time_var.set(duration)
                 self.framerate_var.set(fps)
             self.input_file = file_path
@@ -281,14 +286,21 @@ class VideoCutterApp:
             self.audio_file_entry.insert(0, file_path)
             self.audio_file = file_path
             
-            
     def select_compress_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4;*.avi;*.mov")])
         if file_path:
             self.compress_input_file_entry.delete(0, tk.END)
             self.compress_input_file_entry.insert(0, file_path)
             self.input_file = file_path
-
+            with VideoFileClip(file_path) as video:
+                fps = int(video.fps)
+                width, height = video.size
+                resolution = f"{width} x {height}"
+                self.compress_width = width
+                self.compress_height = height
+                self.compress_resolution_var.set(resolution)
+                self.compress_framerate_var.set(fps)
+                
     def update_compress_resolution(self, event):
         resolution = self.compress_resolution_var.get()
         width, height = map(int, resolution.split(' x '))
@@ -345,7 +357,7 @@ class VideoCutterApp:
                 output_file = os.path.join(output_dir, f"compressed_video.mp4")
                 
                 # Encoder: libx264, h264_nvenc, hevc_nvenc
-                subclip.write_videofile(output_file, codec="libx264", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k")
+                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k", preset="slow")
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video compressed successfully!")
@@ -440,7 +452,8 @@ class VideoCutterApp:
                     subclip = self.add_text_watermark(subclip, self.watermark_text_var.get(), self.watermark_position_var.get())
 
                 output_file = os.path.join(output_dir, f"cut_video_{start_time}_{end_time}.mp4")
-                subclip.write_videofile(output_file, codec="libx264", fps=framerate, bitrate=bitrate)
+                
+                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", preset="slow")
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video cut and audio added successfully!")
