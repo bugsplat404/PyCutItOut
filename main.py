@@ -277,6 +277,7 @@ class VideoCutterApp:
                 self.resolution_var.set(resolution)
                 self.end_time_var.set(duration)
                 self.framerate_var.set(fps)
+                self.bitrate_var.set("12000")
             self.input_file = file_path
 
     def select_audio_file(self):
@@ -391,7 +392,7 @@ class VideoCutterApp:
             contrast = float(self.contrast_var.get())
             brightness = float(self.brightness_var.get())
             framerate = int(self.framerate_var.get())
-            bitrate = self.bitrate_var.get()
+            video_bitrate = self.bitrate_var.get()
         except ValueError:
             messagebox.showerror("Error", "Invalid input values.")
             return
@@ -404,9 +405,9 @@ class VideoCutterApp:
         if not output_dir:
             return
 
-        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, bitrate, output_dir)).start()
+        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, output_dir)).start()
 
-    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, bitrate, output_dir):
+    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, output_dir):
         self.progress_bar.start()
 
         try:
