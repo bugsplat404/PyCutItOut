@@ -269,7 +269,7 @@ class VideoCutterApp:
             self.input_file_entry.insert(0, file_path)
             with VideoFileClip(file_path) as video:
                 duration = int(video.duration)
-                fps = int(video.fps)
+                fps = video.fps
                 width, height = video.size
                 resolution = f"{width} x {height}"
                 self.width_var.set(width)
@@ -293,7 +293,7 @@ class VideoCutterApp:
             self.compress_input_file_entry.insert(0, file_path)
             self.input_file = file_path
             with VideoFileClip(file_path) as video:
-                fps = int(video.fps)
+                fps = video.fps
                 width, height = video.size
                 resolution = f"{width} x {height}"
                 self.compress_width = width
@@ -354,7 +354,7 @@ class VideoCutterApp:
                 if tone != 1.0:
                     subclip = subclip.fx(volumex, tone)
                 
-                output_file = os.path.join(output_dir, f"compressed_video.mp4")
+                output_file = os.path.join(output_dir, f"compressed_video_{framerate}_{video_bitrate}.mp4")
                 
                 # Encoder: libx264, h264_nvenc, hevc_nvenc
                 subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k", preset="slow")
