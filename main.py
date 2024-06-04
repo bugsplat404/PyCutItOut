@@ -224,42 +224,52 @@ class VideoCutterApp:
         self.compress_input_file_entry.grid(row=0, column=1, padx=10, pady=10)
         ttk.Button(tab, text="Browse", command=self.select_compress_file, bootstyle="primary").grid(row=0, column=2, padx=10, pady=10)
 
-        ttk.Label(tab, text="Output Resolution:").grid(row=1, column=0, padx=10, pady=10)
+        ttk.Label(tab, text="Width:").grid(row=1, column=0, padx=10, pady=10)
+        self.compress_width_var = tk.IntVar(value=1080)
+        self.compress_width_entry = ttk.Entry(tab, textvariable=self.compress_width_var)
+        self.compress_width_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        ttk.Label(tab, text="Height:").grid(row=2, column=0, padx=10, pady=10)
+        self.compress_height_var = tk.IntVar(value=1920)
+        self.compress_height_entry = ttk.Entry(tab, textvariable=self.compress_height_var)
+        self.compress_height_entry.grid(row=2, column=1, padx=10, pady=10)
+
+        ttk.Label(tab, text="Output Resolution:").grid(row=3, column=0, padx=10, pady=10)
         self.compress_resolutions = ["<-- Hochformat -->", "1080 x 1920", "720 x 1280", "480 x 640", "<-- Querformat -->", "1920 x 1080", "1280 x 720", "640 x 480"]
         self.compress_resolution_var = tk.StringVar(value="1080 x 1920")
         self.compress_resolution_combobox = ttk.Combobox(tab, textvariable=self.compress_resolution_var, values=self.compress_resolutions)
-        self.compress_resolution_combobox.grid(row=1, column=1, padx=10, pady=10)
+        self.compress_resolution_combobox.grid(row=3, column=1, padx=10, pady=10)
         self.compress_resolution_combobox.bind("<<ComboboxSelected>>", self.update_compress_resolution)
         
         self.compress_framerate_label = ttk.Label(tab, text="Framerate: 60")
-        self.compress_framerate_label.grid(row=2, column=0, padx=10, pady=10)
+        self.compress_framerate_label.grid(row=4, column=0, padx=10, pady=10)
         self.compress_framerate_var = tk.IntVar(value=60)
         self.compress_framerate_entry = ttk.Entry(tab, textvariable=self.compress_framerate_var)
-        self.compress_framerate_entry.grid(row=2, column=1, padx=10, pady=10)
+        self.compress_framerate_entry.grid(row=4, column=1, padx=10, pady=10)
 
-        ttk.Label(tab, text="Video Bitrate (kbps):").grid(row=3, column=0, padx=10, pady=10)
+        ttk.Label(tab, text="Video Bitrate (kbps):").grid(row=5, column=0, padx=10, pady=10)
         self.compress_bitrate_var = tk.StringVar(value="4000")
         self.compress_bitrate_entry = ttk.Entry(tab, textvariable=self.compress_bitrate_var)
-        self.compress_bitrate_entry.grid(row=3, column=1, padx=10, pady=10)
+        self.compress_bitrate_entry.grid(row=5, column=1, padx=10, pady=10)
 
-        ttk.Label(tab, text="Audio Bitrate (kbps):").grid(row=4, column=0, padx=10, pady=10)
-        self.compress_audio_bitrate_var = tk.StringVar(value="128")
+        ttk.Label(tab, text="Audio Bitrate (kbps):").grid(row=6, column=0, padx=10, pady=10)
+        self.compress_audio_bitrate_var = tk.StringVar(value="256")
         self.compress_audio_bitrate_entry = ttk.Entry(tab, textvariable=self.compress_audio_bitrate_var)
-        self.compress_audio_bitrate_entry.grid(row=4, column=1, padx=10, pady=10)
+        self.compress_audio_bitrate_entry.grid(row=6, column=1, padx=10, pady=10)
         
         self.compress_video_volume_label = ttk.Label(tab, text="Video Volume: 1.0")
-        self.compress_video_volume_label.grid(row=6, column=0, padx=10, pady=10)
+        self.compress_video_volume_label.grid(row=7, column=0, padx=10, pady=10)
         self.compress_video_volume_var = tk.DoubleVar(value=1.0)
         self.compress_video_volume_slider = ttk.Scale(tab, from_=0, to=3, orient=tk.HORIZONTAL, variable=self.compress_video_volume_var, command=self.update_compress_video_volume_label)
-        self.compress_video_volume_slider.grid(row=6, column=1, padx=10, pady=10)
+        self.compress_video_volume_slider.grid(row=7, column=1, padx=10, pady=10)
         
         self.compress_video_tone_label = ttk.Label(tab, text="Video Tone: 1.0")
-        self.compress_video_tone_label.grid(row=7, column=0, padx=10, pady=10)
+        self.compress_video_tone_label.grid(row=8, column=0, padx=10, pady=10)
         self.compress_video_tone_var = tk.DoubleVar(value=1.0)
         self.compress_video_tone_slider = ttk.Scale(tab, from_=0, to=3, orient=tk.HORIZONTAL, variable=self.compress_video_tone_var, command=self.update_compress_video_tone_label)
-        self.compress_video_tone_slider.grid(row=7, column=1, padx=10, pady=10)
+        self.compress_video_tone_slider.grid(row=8, column=1, padx=10, pady=10)
 
-        ttk.Button(tab, text="Compress Video", command=self.compress_video, bootstyle="success").grid(row=10, column=0, columnspan=3, pady=20)
+        ttk.Button(tab, text="Compress Video", command=self.compress_video, bootstyle="success").grid(row=11, column=0, columnspan=3, pady=20)
 
 
     def select_file(self):
@@ -297,16 +307,16 @@ class VideoCutterApp:
                 fps = video.fps
                 width, height = video.size
                 resolution = f"{width} x {height}"
-                self.compress_width = width
-                self.compress_height = height
+                self.compress_width_var.set(width)
+                self.compress_height_var.set(height)
                 self.compress_resolution_var.set(resolution)
                 self.compress_framerate_var.set(fps)
                 
     def update_compress_resolution(self, event):
         resolution = self.compress_resolution_var.get()
         width, height = map(int, resolution.split(' x '))
-        self.compress_width = width
-        self.compress_height = height
+        self.compress_width_var.set(width)
+        self.compress_height_var.set(height)
         
     def update_compress_video_volume_label(self, value):
         self.compress_video_volume_label.config(text=f"Video Volume: {float(value):.1f}")
@@ -321,6 +331,8 @@ class VideoCutterApp:
             return
 
         try:
+            width = int(self.compress_width_var.get())
+            height = int(self.compress_height_var.get())
             framerate = int(self.compress_framerate_var.get())
             video_bitrate = int(self.compress_bitrate_var.get())
             audio_bitrate = int(self.compress_audio_bitrate_var.get())
@@ -334,7 +346,7 @@ class VideoCutterApp:
         if not output_dir:
             return
 
-        threading.Thread(target=self.process_compress_video, args=(self.compress_width, self.compress_height, output_dir, framerate, video_bitrate, audio_bitrate, volume, tone)).start()
+        threading.Thread(target=self.process_compress_video, args=(width, height, output_dir, framerate, video_bitrate, audio_bitrate, volume, tone)).start()
 
     def process_compress_video(self, width, height, output_dir, framerate, video_bitrate, audio_bitrate, volume=1.0, tone=1.0):
         self.progress_bar.start()
