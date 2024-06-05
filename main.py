@@ -370,7 +370,7 @@ class VideoCutterApp:
                 output_file = os.path.join(output_dir, f"compressed_video_{framerate}_{video_bitrate}.mp4")
                 
                 # Encoder: libx264, h264_nvenc, hevc_nvenc
-                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k", preset="slow")
+                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k", preset="slow", audio_fps=48000)
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video compressed successfully!")
@@ -466,7 +466,7 @@ class VideoCutterApp:
 
                 output_file = os.path.join(output_dir, f"cut_video_{start_time}_{end_time}.mp4")
                 
-                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", preset="slow")
+                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", preset="slow", audio_fps=48000)
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video cut and audio added successfully!")
@@ -517,11 +517,13 @@ class VideoCutterApp:
             with VideoFileClip(self.input_file) as video:
                 audio = video.audio
                 audio_output_path = os.path.join(output_dir, f"extracted_audio.{self.audio_format_var.get()}")
-                audio.write_audiofile(audio_output_path)
+                # Set the sample rate to 48kHz
+                audio.write_audiofile(audio_output_path, fps=48000)
 
             messagebox.showinfo("Success", f"Audio extracted successfully to {audio_output_path}!")
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
 
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
