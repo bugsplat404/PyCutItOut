@@ -7,3 +7,4 @@ imageio[ffmpeg]
 tqdm
 requests
 proglog
+opencv-python

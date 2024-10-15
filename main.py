@@ -154,20 +154,27 @@ class VideoCutterApp:
         self.bitrate_entry = ttk.Entry(advanced_settings_frame, textvariable=self.bitrate_var)
         self.bitrate_entry.grid(row=7, column=1, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.extend([self.bitrate_label, self.bitrate_entry])
+        
+        self.audio_bitrate_label = ttk.Label(advanced_settings_frame, text="Audio Bitrate")
+        self.audio_bitrate_label.grid(row=8, column=0, padx=10, pady=10, sticky=tk.W)
+        self.audio_bitrate_var = tk.StringVar(value="192")
+        self.audio_bitrate_entry = ttk.Entry(advanced_settings_frame, textvariable=self.audio_bitrate_var)
+        self.audio_bitrate_entry.grid(row=8, column=1, padx=10, pady=10, sticky=tk.W)
+        self.advanced_widgets.extend([self.audio_bitrate_label, self.audio_bitrate_entry])
 
         self.add_watermark_var = tk.BooleanVar()
         self.add_watermark_checkbox = ttk.Checkbutton(advanced_settings_frame, text="Add Watermark", variable=self.add_watermark_var)
-        self.add_watermark_checkbox.grid(row=8, column=0, padx=10, pady=10, sticky=tk.W)
+        self.add_watermark_checkbox.grid(row=9, column=0, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.append(self.add_watermark_checkbox)
 
         self.watermark_text_var = tk.StringVar()
         self.watermark_text_entry = ttk.Entry(advanced_settings_frame, textvariable=self.watermark_text_var)
-        self.watermark_text_entry.grid(row=8, column=1, padx=10, pady=10, sticky=tk.W)
+        self.watermark_text_entry.grid(row=9, column=1, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.append(self.watermark_text_entry)
         
         self.watermark_position_var = tk.StringVar(value="Top Left")
         self.watermark_position_combobox = ttk.Combobox(advanced_settings_frame, textvariable=self.watermark_position_var, values=["Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"])
-        self.watermark_position_combobox.grid(row=8, column=2, padx=10, pady=10, sticky=tk.W)
+        self.watermark_position_combobox.grid(row=9, column=2, padx=10, pady=10, sticky=tk.W)
         self.advanced_widgets.append(self.watermark_position_combobox)
 
         # Hide advanced settings initially
@@ -386,7 +393,7 @@ class VideoCutterApp:
             self.audio_input_file_entry.delete(0, tk.END)
             self.audio_input_file_entry.insert(0, file_path)
             self.input_file = file_path
-
+    
     def cut_video(self):
         if not self.input_file:
             messagebox.showerror("Error", "Please select a video file.")
@@ -405,6 +412,7 @@ class VideoCutterApp:
             brightness = float(self.brightness_var.get())
             framerate = int(self.framerate_var.get())
             video_bitrate = self.bitrate_var.get()
+            audio_bitrate = self.audio_bitrate_var.get()
         except ValueError:
             messagebox.showerror("Error", "Invalid input values.")
             return
@@ -417,9 +425,34 @@ class VideoCutterApp:
         if not output_dir:
             return
 
-        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, output_dir)).start()
+        threading.Thread(target=self.process_video, args=(start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, audio_bitrate, output_dir)).start()
 
-    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, output_dir):
+    def process_audio(self, subclip, audio_file, audio_volume):
+        try:
+            new_audio = AudioFileClip(audio_file)
+            new_audio = new_audio.volumex(audio_volume)
+            new_audio = new_audio.set_fps(48000)
+            
+            if new_audio.duration > subclip.duration:
+                new_audio = new_audio.subclip(0, subclip.duration)
+            
+            if subclip.audio is None:
+                print("The video has no audio track. Setting the new audio directly.")
+                subclip = subclip.set_audio(new_audio)
+            else:
+                composite_audio = CompositeAudioClip([subclip.audio, new_audio])
+                subclip = subclip.set_audio(composite_audio)
+            
+            print("Audio has been successfully set.")
+        except Exception as e:
+            print(f"An error occurred while processing audio: {e}")
+            raise e
+        finally:
+            # Ensure the audio clip is closed
+            new_audio.close()
+        return subclip
+    
+    def process_video(self, start_time, end_time, width, height, video_volume, audio_volume, video_speed, video_rotation, contrast, brightness, framerate, video_bitrate, audio_bitrate, output_dir):
         self.progress_bar.start()
 
         try:
@@ -456,17 +489,15 @@ class VideoCutterApp:
                 subclip = subclip.volumex(video_volume)
 
                 if self.audio_file:
-                    with AudioFileClip(self.audio_file) as new_audio:
-                        new_audio = new_audio.volumex(audio_volume)
-                        composite_audio = CompositeAudioClip([subclip.audio, new_audio])
-                        subclip = subclip.set_audio(composite_audio)
+                    subclip = self.process_audio(subclip, self.audio_file, audio_volume)
 
                 if self.add_watermark_var.get():
                     subclip = self.add_text_watermark(subclip, self.watermark_text_var.get(), self.watermark_position_var.get())
 
                 output_file = os.path.join(output_dir, f"cut_video_{start_time}_{end_time}.mp4")
                 
-                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", preset="slow", audio_fps=48000)
+                print(f"Writing video to file: {output_file}")
+                subclip.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=framerate, bitrate=f"{video_bitrate}k", audio_bitrate=f"{audio_bitrate}k", preset="slow", audio_fps=48000)
 
             self.progress_bar.stop()
             messagebox.showinfo("Success", "Video cut and audio added successfully!")
@@ -475,6 +506,7 @@ class VideoCutterApp:
             messagebox.showerror("Error", str(e))
         finally:
             self.progress_var.set(100)
+
 
     def add_text_watermark(self, video_clip, text, position="Top Left"):
         def add_text_to_frame(get_frame, t):
